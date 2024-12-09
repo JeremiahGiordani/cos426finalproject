@@ -24,6 +24,10 @@ class Flower extends Group {
             this.add(gltf.scene);
         });
 
+        this.position.x = -5;
+        this.position.z = -20;
+        this.rotation.y = 2700;
+
         // Add self to parent's update list
         parent.addToUpdateList(this);
 
