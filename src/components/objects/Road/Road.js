@@ -10,39 +10,58 @@ class Road extends Group {
         this.segments = []; // Track existing road segments
         this.loader = new GLTFLoader();
         this.chunkLength = 39.49791; // Length of one chunk
+        this.modelTemplate = null; // Cached model for reuse
+    }
+
+    async loadModelTemplate() {
+        return new Promise((resolve, reject) => {
+            this.loader.load(
+                MODEL,
+                (gltf) => {
+                    this.modelTemplate = gltf.scene;
+                    console.log("Model template loaded");
+                    resolve();
+                },
+                undefined,
+                (error) => {
+                    console.error("Error loading model template:", error);
+                    reject(error);
+                }
+            );
+        });
     }
 
     addSegment(chunkNumber) {
-        const zOffset = -chunkNumber * this.chunkLength;
-
-        this.loader.load(
-            MODEL,
-            (gltf) => {
-                const roadModel = gltf.scene;
-
-                // Scale and rotate the road segment
-                roadModel.scale.set(0.01, 0.01, 0.01);
-                roadModel.rotation.y = Math.PI / 2;
-
-                // Position the segment at the calculated z offset
-                roadModel.position.z = zOffset;
-
-                // Add the segment to the group and track it
-                this.add(roadModel);
-                this.segments.push({ chunk: chunkNumber, model: roadModel });
-            },
-            undefined,
-            (error) => {
-                console.error(`Error loading road segment for chunk ${chunkNumber}:`, error);
+        return new Promise((resolve, reject) => {
+            if (!this.modelTemplate) {
+                reject(new Error("Model template not loaded"));
+                return;
             }
-        );
+
+            const zOffset = -chunkNumber * this.chunkLength;
+
+            // Clone the cached model for the new chunk
+            const roadModel = this.modelTemplate.clone();
+
+            // Position and scale the cloned model
+            roadModel.scale.set(0.01, 0.01, 0.01);
+            roadModel.rotation.y = Math.PI / 2;
+            roadModel.position.z = zOffset;
+
+            // Add the cloned model to the group and track it
+            this.add(roadModel);
+            this.segments.push({ chunk: chunkNumber, model: roadModel });
+
+            console.log(`Chunk ${chunkNumber} added`);
+            resolve();
+        });
     }
 
     removeOldSegment() {
-        // Remove the first segment in the list
         if (this.segments.length > 0) {
             const { model } = this.segments.shift();
             this.remove(model);
+            console.log("Oldest chunk removed");
         }
     }
 }
