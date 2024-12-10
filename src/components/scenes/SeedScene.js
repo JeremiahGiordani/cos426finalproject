@@ -1,7 +1,7 @@
-import * as Dat from 'dat.gui';
 import { Scene, Color } from 'three';
-import { Car_NPC, Road, Player } from 'objects';
+import { Road, Player } from 'objects';
 import { BasicLights } from 'lights';
+import { Old_Car_NPC, Car_2_NPC, Cop_NPC, Fire_Truck_NPC, Taxi_NPC, Bus_NPC, Truck_NPC, Ambulance_NPC, Car_NPC } from '../objects';
 
 class SeedScene extends Scene {
     constructor() {
@@ -15,13 +15,13 @@ class SeedScene extends Scene {
             updateList: [],
             x_speed: 0, // Initial speed in x direction
             z_speed: 0, // Initial speed in z direction
-            acceleration: 0.001, // Acceleration when keys are pressed
+            acceleration: 0.002, // Acceleration when keys are pressed
             maxSpeed: 0.5, // Maximum speed limit
             health: 100,
             currentChunk: 0, // Chunk the player is currently on
             renderDistance: 5, // Number of chunks to render ahead
-            car_speed: 0.02,
-            npcCars: [],
+            npcs: [],
+            opposing_npcs: [],
         };
 
         // Set background to a nice color
@@ -31,11 +31,9 @@ class SeedScene extends Scene {
         this.road = new Road();
         const lights = new BasicLights();
         this.player = new Player();
+        // this.addToUpdateList(this.player);
         // Add NPC car and track it
-        const npcCar = new Car_NPC();
-        npcCar.mass = 1; // Assign a mass to NPC cars
-        this.state.npcCars.push(npcCar);
-        this.add(this.road, lights, npcCar, this.player);
+        this.add(this.road, lights, this.player);
 
         // Add keyboard event listeners
         this.addKeyboardControls();
@@ -48,6 +46,7 @@ class SeedScene extends Scene {
 
         this.position.x = -2.5
         this.player.position.x = 2.5
+        this.npcTypes = [Old_Car_NPC, Car_2_NPC, Cop_NPC, Fire_Truck_NPC, Taxi_NPC, Bus_NPC, Truck_NPC, Ambulance_NPC, Car_NPC];
     }
 
     addToUpdateList(object) {
@@ -59,8 +58,35 @@ class SeedScene extends Scene {
         await this.road.loadModelTemplate();
     
         // Add initial road chunks
-        for (let i = 0; i < this.state.renderDistance; i++) {
-            await this.road.addSegment(i);
+        for (let chunk = 0; chunk < this.state.renderDistance; chunk++) {
+            // Add road segment for the chunk
+            await this.road.addSegment(chunk);
+    
+            // For each lane in the chunk, add a random NPC
+            for (let lane = 0; lane < 3; lane++) { // Assuming 3 lanes
+                // Pick a random NPC type
+                const RandomNPC = this.npcTypes[Math.floor(Math.random() * this.npcTypes.length)];
+    
+                // Create the NPC instance
+                const npc = new RandomNPC(lane + 1, chunk + 1);
+    
+                // Add the NPC to the state and the scene
+                this.state.npcs.push(npc);
+                this.add(npc);
+            }
+            for (let lane = 0; lane < 3; lane++) { // Assuming 3 lanes
+                // Pick a random NPC type
+                const RandomNPC = this.npcTypes[Math.floor(Math.random() * this.npcTypes.length)];
+    
+                // Create the NPC instance
+                const npc = new RandomNPC(lane + 1, chunk + 1);
+                npc.rotation.y += Math.PI;
+                npc.position.x *= -1;
+    
+                // Add the NPC to the state and the scene
+                this.state.opposing_npcs.push(npc);
+                this.add(npc);
+            }
         }
     }
 
@@ -78,65 +104,159 @@ class SeedScene extends Scene {
                 // Preload the next chunk asynchronously
                 this.road.addSegment(currentChunk + renderDistance - 1);
                 console.log(`Chunk ${currentChunk + renderDistance - 1} preloaded`);
+
+                // Add one random NPC to a random lane in the new chunk
+                const RandomNPC = this.npcTypes[Math.floor(Math.random() * this.npcTypes.length)];
+                const randomLane = Math.floor(Math.random() * 3) + 1; // Random lane (1, 2, or 3)
+                const npc = new RandomNPC(randomLane, currentChunk + renderDistance);
+
+                // Add the NPC to the state and the scene
+                this.state.npcs.push(npc);
+                this.add(npc);
+
+                for (let i = 0; i < 2; i++){
+                    // Add one random NPC to a random lane in the new chunk
+                    const RandomOpposingNPC = this.npcTypes[Math.floor(Math.random() * this.npcTypes.length)];
+                    const randomOpposingLane = Math.floor(Math.random() * 3) + 1; // Random lane (1, 2, or 3)
+                    const opposing_npc = new RandomOpposingNPC(randomOpposingLane, currentChunk + renderDistance);
+
+                    opposing_npc.rotation.y += Math.PI;
+                    opposing_npc.position.x *= -1;
+
+                    // Add the NPC to the state and the scene
+                    this.state.opposing_npcs.push(opposing_npc);
+                    this.add(opposing_npc);
+                }
     
                 // Remove the oldest chunk after the new one is loaded
                 this.road.removeOldSegment();
+                this.removeOldNPCs(currentChunk - 1);
             } catch (error) {
                 console.error("Failed to preload chunk:", error);
             }
         }
     }
 
+    removeOldNPCs(chunk) {
+        // Iterate over all NPCs
+        for (let i = this.state.npcs.length - 1; i >= 0; i--) {
+            const npc = this.state.npcs[i];
+
+            console.log("CURRENT CHUNK");
+            console.log(npc.getCurrentChunk());
+    
+            // Check the NPC's current chunk
+            if (-1 * npc.getCurrentChunk() <= chunk) {
+                // Remove the NPC
+                npc.remove();
+                
+                // Remove the NPC from the state
+                this.state.npcs.splice(i, 1);
+            }
+        }
+
+        for (let i = this.state.opposing_npcs.length - 1; i >= 0; i--) {
+            const npc = this.state.opposing_npcs[i];
+
+            console.log("CURRENT CHUNK");
+            console.log(npc.getCurrentChunk());
+    
+            // Check the NPC's current chunk
+            if (-1 * npc.getCurrentChunk() <= chunk) {
+                // Remove the NPC
+                npc.remove();
+                
+                // Remove the NPC from the state
+                this.state.opposing_npcs.splice(i, 1);
+            }
+        }
+    }
+
     updateNpcBoundingBoxes() {
-        this.state.npcCars.forEach((npc) => npc.updateBoundingBox());
+        this.state.npcs.forEach((npc) => npc.updateBoundingBox());
     }
 
     checkCollisions() {
         const playerBox = this.player.getBoundingBox();
 
-        this.state.npcCars.forEach((npc) => {
+        this.state.npcs.forEach((npc) => {
             const npcBox = npc.getBoundingBox();
             if (playerBox.intersectsBox(npcBox)) {
                 this.handleNpcCollision(npc);
+            } else {
+                npc.z_speed = npc.restingZSpeed;
             }
         });
     }
 
     handleNpcCollision(npc) {
         console.log(`Collision with ${npc.name}!`);
-
-        // Calculate new velocities using momentum equations
+    
         const playerMass = 1; // Assign mass to the player
+        const npcMass = npc.mass || 1; // Default mass if not defined
+        const totalMass = playerMass + npcMass;
+    
+        // Player and NPC velocities
         const playerVelocity = { x: this.state.x_speed, z: this.state.z_speed };
-        const npcVelocity = { x: 0, z: -this.state.car_speed }; // Assuming NPC moves only along z
-
-        // Resolve collision along the z-axis
-        const totalMass = playerMass + npc.mass;
+        const npcVelocity = { x: npc.x_speed, z: npc.z_speed };
+    
+        // Elastic collision formulas
         const newPlayerZVelocity = (
-            (playerMass - npc.mass) * playerVelocity.z +
-            2 * npc.mass * npcVelocity.z
+            (playerMass - npcMass) * playerVelocity.z +
+            2 * npcMass * npcVelocity.z
         ) / totalMass;
         const newNpcZVelocity = (
-            (npc.mass - playerMass) * npcVelocity.z +
+            (npcMass - playerMass) * npcVelocity.z +
             2 * playerMass * playerVelocity.z
         ) / totalMass;
-
-        // Resolve collision along the x-axis (if needed)
-        const newPlayerXVelocity = 0; // Player bounces straight back
-        const newNpcXVelocity = 0; // NPC remains in its lane
-
+    
+        const newPlayerXVelocity = (
+            (playerMass - npcMass) * playerVelocity.x +
+            2 * npcMass * npcVelocity.x
+        ) / totalMass;
+        const newNpcXVelocity = (
+            (npcMass - playerMass) * npcVelocity.x +
+            2 * playerMass * playerVelocity.x
+        ) / totalMass;
+    
         // Apply updated velocities
         this.state.z_speed = newPlayerZVelocity;
         this.state.x_speed = newPlayerXVelocity;
         npc.z_speed = newNpcZVelocity;
         npc.x_speed = newNpcXVelocity;
-
+    
+        // Calculate collision direction and apply offset
+        const collisionOffset = 0.1; // Adjust based on scale
+        const collisionVector = {
+            x: npc.position.x - this.player.position.x,
+            z: npc.position.z - this.player.position.z,
+        };
+    
+        // Normalize the collision vector
+        const magnitude = Math.sqrt(collisionVector.x ** 2 + collisionVector.z ** 2);
+        if (magnitude > 0) {
+            collisionVector.x /= magnitude;
+            collisionVector.z /= magnitude;
+        }
+    
+        // Apply offset based on collision direction
+        npc.updateBoundingBox();
+        npc.position.x += collisionVector.x * collisionOffset;
+        npc.updateBoundingBox();
+        npc.position.z += collisionVector.z * collisionOffset;
+    
+        this.player.updateBoundingBox();
+        this.player.position.x -= collisionVector.x * collisionOffset;
+        this.position.x += collisionVector.x * collisionOffset;
+        // this.player.updateBoundingBox();
+        this.player.position.z -= collisionVector.z * collisionOffset;
+        this.position.z += collisionVector.z * collisionOffset;
+    
         // Damage the player based on collision force
         const impactForce = Math.abs(playerVelocity.z - npcVelocity.z) * playerMass;
-        this.updateHealth(this.state.health - impactForce * 5); // Scale damage as needed
+        this.updateHealth(this.state.health - impactForce * 100); // Scale damage as needed
     }
     
-
     createHealthBar() {
         // Create the container for the health bar
         const healthBarContainer = document.createElement('div');
@@ -209,28 +329,16 @@ class SeedScene extends Scene {
             }
             if (keysPressed.has('d')) {
                 this.player.rotation.y = -0.05
-                if (this.player.position.x >= 4.2955){
-                    this.updateHealth(this.state.health - 10 * Math.abs(this.state.z_speed) - 10 * Math.abs(this.state.x_speed));
-                    this.state.x_speed = 0;
-                    this.state.z_speed /= 2;
-                } else {
-                    this.state.x_speed = Math.max(this.state.x_speed - this.state.acceleration, -this.state.maxSpeed);
-                }
+                this.state.x_speed = Math.max(this.state.x_speed - this.state.acceleration, -this.state.maxSpeed);
             }
             if (keysPressed.has('a')) {
                 this.player.rotation.y = 0.05
-                if (this.player.position.x <= 0.9864){
-                    this.updateHealth(this.state.health - 10 * Math.abs(this.state.z_speed) - 10 * Math.abs(this.state.x_speed));
-                    this.state.x_speed = 0;
-                    this.state.z_speed /= 2;
-                } else {
-                    this.state.x_speed = Math.min(this.state.x_speed + this.state.acceleration, this.state.maxSpeed);
-                }
+                this.state.x_speed = Math.min(this.state.x_speed + this.state.acceleration, this.state.maxSpeed);
             }
 
             // Gradual deceleration (friction effect) when no keys are pressed
             if (!keysPressed.has('w') && !keysPressed.has('s')) {
-                this.state.z_speed *= 0.98; // Friction for z_speed
+                this.state.z_speed *= 0.99; // Friction for z_speed
             }
             if (!keysPressed.has('a') && !keysPressed.has('d')) {
                 this.player.rotation.y = 0
@@ -249,9 +357,18 @@ class SeedScene extends Scene {
         this.player.updateBoundingBox();
         this.updateNpcBoundingBoxes();
 
+        if (this.player.position.x >= 4.2955){
+            this.updateHealth(this.state.health - 5 * Math.abs(this.state.z_speed) - 5 * Math.abs(this.state.x_speed));
+            this.state.x_speed = 0.01;
+            this.state.z_speed /= 1.3;
+        }
 
-        // Check collisions
-        this.checkCollisions();
+        if (this.player.position.x <= 0.9864){
+            this.updateHealth(this.state.health - 5 * Math.abs(this.state.z_speed) - 5 * Math.abs(this.state.x_speed));
+            this.state.x_speed = -0.01;
+            this.state.z_speed /= 1.3;
+        }
+
 
         // Update position based on speed
         this.position.x += x_speed;
@@ -259,11 +376,30 @@ class SeedScene extends Scene {
         this.player.position.x -= x_speed;
         this.player.position.z -= z_speed;
 
+        // Update player bounding box
+        // this.player.updateBoundingBox();
+
         // Update NPC car positions
-        this.state.npcCars.forEach((npc) => {
-            npc.position.z -= this.state.car_speed;
+        this.state.npcs.forEach((npc) => {
             npc.updateBoundingBox();
+            if (npc.position.x >= 4.3955){
+                npc.x_speed = 0.01;
+            }
+            if (npc.position.x <= 0.8864){
+                npc.x_speed = -0.01;
+            }
+            npc.position.z -= npc.z_speed;
+            npc.position.x -= npc.x_speed;
+            npc.x_speed *= 0.9;
         });
+
+        this.state.opposing_npcs.forEach((npc) => {
+            npc.position.z += npc.restingZSpeed;
+            npc.position.x -= npc.x_speed;
+        });
+
+        // Check collisions
+        this.checkCollisions();
 
         // Call updateRoad() asynchronously without blocking
         this.updateRoad();

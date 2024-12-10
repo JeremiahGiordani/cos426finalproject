@@ -13,7 +13,11 @@ class Player extends Group {
 
         loader.load(MODEL, (gltf) => {
             this.add(gltf.scene);
+
+            // Compute the bounding box once the model is loaded
+            this.updateBoundingBox();
         });
+
         this.scale.set(0.8, 0.8, 0.8);
         this.position.y = 0.25;
 
@@ -25,9 +29,9 @@ class Player extends Group {
         // Compute the bounding box of the player
         this.boundingBox.setFromObject(this);
 
-        // Optionally, visualize the bounding box for debugging
+        // Visualize the bounding box for debugging
         if (!this.boundingBoxHelper) {
-            this.boundingBoxHelper = new Box3Helper(this.boundingBox, 0xffff00);
+            this.boundingBoxHelper = new Box3Helper(this.boundingBox, 0xffff00); // Yellow for debug
             this.add(this.boundingBoxHelper);
         } else {
             // Update the helper to match the bounding box
@@ -37,6 +41,11 @@ class Player extends Group {
 
     getBoundingBox() {
         return this.boundingBox.clone();
+    }
+
+    update() {
+        // Call this method on every frame to keep the bounding box in sync
+        this.updateBoundingBox();
     }
 }
 
