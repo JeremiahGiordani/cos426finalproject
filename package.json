@@ -1,18 +1,17 @@
 {
-  "name": "lower-case-dashed-name-of-project",
+  "name": "pa-turnpike-simulator",
   "repository": "cos426finalproject",
   "version": "0.1.0",
-  "title": "PROJECT TITLE HERE",
-  "description": "SHORT DESCRIPTION OF PROJECT HERE. ONE TO TWO SENTENCES MAX",
+  "title": "PA Turnpike Simulator",
+  "description": "A web racing game, designed after the PA Turnpike",
   "keywords": [
     "Princeton",
     "graphics",
     "three.js",
     "COS 426",
-    "keywor0d",
-    "keyword1",
-    "keyword2-etc",
-    "but this last entry CANNOT have a comma after it ->"
+    "racing",
+    "driving",
+    "simulator"
   ],
   "scripts": {
     "start": "webpack-dev-server --mode development --output-public-path \"\"",

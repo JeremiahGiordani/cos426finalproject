@@ -30,13 +30,13 @@ class Player extends Group {
         this.boundingBox.setFromObject(this);
 
         // Visualize the bounding box for debugging
-        if (!this.boundingBoxHelper) {
-            this.boundingBoxHelper = new Box3Helper(this.boundingBox, 0xffff00); // Yellow for debug
-            this.add(this.boundingBoxHelper);
-        } else {
-            // Update the helper to match the bounding box
-            this.boundingBoxHelper.box.copy(this.boundingBox);
-        }
+        // if (!this.boundingBoxHelper) {
+        //     this.boundingBoxHelper = new Box3Helper(this.boundingBox, 0xffff00); // Yellow for debug
+        //     this.add(this.boundingBoxHelper);
+        // } else {
+        //     // Update the helper to match the bounding box
+        //     this.boundingBoxHelper.box.copy(this.boundingBox);
+        // }
     }
 
     getBoundingBox() {
