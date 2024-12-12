@@ -52,10 +52,8 @@ export async function updateRoad(scene) {
 
             let cap;
             if (scene.player.position.z >= -30 * scene.state.positionToMiles){
-                console.log("RUNNING THE IF");
                 cap = 1;
             } else{
-                console.log("RUNNING THE ELSE");
                 cap = 2;
             }
             for (let i = 0; i < cap; i++){
