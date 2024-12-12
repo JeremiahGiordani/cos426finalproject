@@ -3,11 +3,11 @@ import { Road, Player } from 'objects';
 import { Turnpike, Checkpoint0, Checkpoint1, Checkpoint2, Checkpoint3, Checkpoint4, Checkpoint5, Checkpoint6, Checkpoint7, Checkpoint8 } from 'objects';
 import { BasicLights } from 'lights';
 import { Old_Car_NPC, Car_2_NPC, Cop_NPC, Fire_Truck_NPC, Taxi_NPC, Bus_NPC, Truck_NPC, Ambulance_NPC, Car_NPC } from '../objects';
-import { addKeyboardControls } from './controls'; 
-import { createHealthBar, updateHealth, showJailPopup, showCongratsPopup } from './healthBar';
-import { initRoad, updateRoad } from './roadManagement';
-import { checkCollisions } from './collisions';
-import { createStatusDisplay } from './statusDisplay';
+import { addKeyboardControls } from './utils/controls'; 
+import { createHealthBar, updateHealth, showJailPopup, showCongratsPopup } from './utils/healthBar';
+import { initRoad, updateRoad } from './utils/roadManagement';
+import { checkCollisions } from './utils/collisions';
+import { createStatusDisplay } from './utils/statusDisplay';
 
 
 class SeedScene extends Scene {
